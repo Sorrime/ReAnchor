@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "如果使用本仓库的内容，请按下列信息引用。"
+title: "ReAnchor"
+abstract: >-
+  一个关于情境边界、前提检查与重新锚定的计算实验项目。研究当一个推理系统
+  必须在某个情境中使用一条未被声明的规则时，它输出的不确定性是否反映这个空缺，
+  而不是被其他情境的先验填成确定的前提。
+authors:
+  - name: "夏威夷"
+    alias: "Sorrime"
+type: software
+license: MIT
+repository-code: "https://github.com/Sorrime/ReAnchor"
+url: "https://github.com/Sorrime/ReAnchor"
+version: "0.1.0"
+date-released: "2026-09-28"
+keywords:
+  - calibration
+  - uncertainty
+  - underspecification
+  - premise checking
+  - context
