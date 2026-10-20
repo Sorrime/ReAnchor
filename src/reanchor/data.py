@@ -1,18 +1,19 @@
 """Datasets that combine MNIST images with one-hot hint vectors."""
 
 import torch
-import torch.nn.functional as F
 from torch.utils.data import Dataset
 from torchvision import datasets, transforms
 
 
-def _wrong_label(label: int) -> int:
-    offset = torch.randint(1, 10, ()).item()
-    return (label + offset) % 10
+def _wrong_label(label: int, generator: torch.Generator | None) -> int:
+    offset = torch.randint(1, 10, (), generator=generator).item()
+    return int(label + offset) % 10
 
 
 def _one_hot(label: int) -> torch.Tensor:
-    return F.one_hot(torch.tensor(label), num_classes=10).float()
+    hint = torch.zeros(10)
+    hint[label] = 1
+    return hint
 
 
 class HintedMNIST(Dataset):
@@ -24,7 +25,8 @@ class HintedMNIST(Dataset):
     group='mix': each sample gets A with probability p_a, else C.
     """
 
-    def __init__(self, root: str, train: bool, group: str, p_a: float = 0.5, download: bool = True):
+    def __init__(self, root: str, train: bool, group: str, p_a: float = 0.5,
+                 download: bool = False, seed: int | None = None):
         self.mnist = datasets.MNIST(
             root=root,
             train=train,
@@ -33,6 +35,8 @@ class HintedMNIST(Dataset):
         )
         self.group = group
         self.p_a = p_a
+        # 固定 seed 时，C/mix 的 hint 生成可复现（评估集用）；None 则每样本重新随机（训练集用）。
+        self.generator = None if seed is None else torch.Generator().manual_seed(seed)
 
     def __len__(self) -> int:
         return len(self.mnist)
@@ -46,12 +50,12 @@ class HintedMNIST(Dataset):
         elif self.group == "B":
             hint = torch.zeros(10)
         elif self.group == "C":
-            hint = _one_hot(_wrong_label(label))
+            hint = _one_hot(_wrong_label(label, self.generator))
         elif self.group == "mix":
-            if torch.rand(()).item() < self.p_a:
+            if torch.rand((), generator=self.generator).item() < self.p_a:
                 hint = _one_hot(label)
             else:
-                hint = _one_hot(_wrong_label(label))
+                hint = _one_hot(_wrong_label(label, self.generator))
         else:
             raise ValueError(f"Unknown group: {self.group}")
 
