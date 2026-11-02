@@ -57,14 +57,23 @@ git diff main                          # 看全部改动
 git diff main --stat                   # 先看概览
 ```
 
-如果用户想合并，**只告诉用户怎么做，不要替用户做**：
-
-```bash
-git checkout main
-git merge dsh/fix-feasibility-gate     # 由用户自己执行
-```
+如果用户想合并，**只告诉用户怎么做，不要替用户做**（流程见第五节）。
 
 PyCharm 的 Git 面板（`Ctrl+Shift+K` 或右下角分支名）也能看 diff 和合并，用户可以自己选。
+
+### 4. 合并后必须验证实际结果
+
+`git merge` 成功不代表结果符合预期。**合并是「把 X 合进我现在所在的分支」，方向容易搞错；而且一边删、一边改的情况下，git 可能默默保留删除。**
+
+所以提醒用户合并后一定确认：
+
+```bash
+git log --oneline -3                             # 有没有生成合并提交
+git status                                       # 工作区是否干净
+git ls-tree -r --name-only HEAD -- <关注目录>     # 实际文件在不在
+```
+
+历史教训：用户曾在 main 上删过 `src/`，之后把含 `src/` 的 `dsh/mainline` 合进 main，`git log` 显示成功，但实际只剩一个 `hello.py`，另外 4 个文件被删除操作覆盖了。
 
 ---
 
@@ -93,3 +102,83 @@ PyCharm 的 Git 面板（`Ctrl+Shift+K` 或右下角分支名）也能看 diff �
 - 改动不明确时**最多先问一个问题**，问完就动手。
 - 不要为了确认显而易见的事反复读文件。
 - 不要用 `present` 展示源码文件，只在交付文档/图片/表格时用。
+
+---
+
+## 五、merge 流程（用户执行，AI 只讲解）
+
+**顺序永远是：先看 diff → 再决定 → 最后 merge → 完了验证。** 不要打完 diff 就直接合。
+
+### 第 1 步：看 diff
+
+```bash
+cd /home/niangaoa/PycharmProjects/ReAnchor
+git diff main dsh/mainline --stat     # 概览：哪些文件、多少行
+git diff main dsh/mainline            # 逐行看
+```
+
+PyCharm：**Git → Compare with Branch → 选 `dsh/mainline`**，左右对比更直观。
+
+看什么：改动是不是你想要的、有没有意外删除、有没有夹带无关文件。
+
+### 第 2 步：站到接收方
+
+```bash
+git checkout main
+```
+
+**合并永远是「把 X 合进我现在所在的分支」。** 想合进 main，就必须先站在 main 上。
+
+PyCharm：点右下角分支名 → 选 `main`。
+
+⚠️ **方向最容易搞错**：如果你人在 `dsh/mainline` 上，右键菜单显示的是 `Merge 'main' into 'dsh/mainline'`，那是反的。菜单文字永远以「当前分支」为落点。
+
+### 第 3 步：合并
+
+```bash
+git merge dsh/mainline
+```
+
+PyCharm：**右下角分支名 → 在列表里找到 `dsh/mainline` → Merge 'dsh/mainline' into 'main'**
+
+**用 Merge，不要用 Rebase。**
+
+| 操作 | 做什么 | 历史 |
+|---|---|---|
+| Merge | 新建一个合并提交，两条线汇合 | 保留分叉，安全 |
+| Rebase | 把提交搬到另一条线上，改写哈希 | 变直线，改写历史 |
+
+### 第 4 步：验证（不能跳过）
+
+```bash
+git log --oneline -3                             # 有没有生成合并提交
+git status                                       # 工作区是否干净
+git ls-tree -r --name-only HEAD -- src/          # 实际文件在不在
+```
+
+**`git log` 显示成功 ≠ 结果对了。** 必须实际看文件。
+
+### 冲突怎么办
+
+两边改了同一文件的同一行时会冲突。文件里出现：
+
+```
+<<<<<<< HEAD
+main 的版本
+=======
+dsh/mainline 的版本
+>>>>>>> dsh/mainline
+```
+
+手动删掉 `<<<<<<<` / `=======` / `>>>>>>>` 三行标记，留下想要的版本，然后：
+
+```bash
+git add 那个文件
+git commit
+```
+
+PyCharm 会弹三栏冲突窗口，点箭头选保留哪边，比手改舒服。
+
+### 避免这种麻烦
+
+**别在 main 上删文件。** main 保持「只读」状态，所有改动都在 dsh 分支做，merge 就是纯粹的「增加」，不会有「一边删、一边还在」的矛盾。
