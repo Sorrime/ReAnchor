@@ -7,5 +7,4 @@ data
 figs/
 
 # AI agent 工具的本地配置，不进版本库
-.codex/
 .dsh/
