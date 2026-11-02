@@ -76,13 +76,12 @@ PyCharm 的 Git 面板（`Ctrl+Shift+K` 或右下角分支名）也能看 diff �
 
 ---
 
-## 三、这个项目的特殊情况
+## 三、工作目录
 
-- **项目暂停中**，用户正在读鱼书补深度学习基础。代码交接文档在 `src/README.md`，动手前先读它。
-- **别推翻 `README.md` 第 3 节的设计约束**：前提三值、hint 用 10 维 one-hot、无提示 = 全零、主指标是校准不是准确率、v0.1 不引入语言模型。
-- **`src/reanchor/__init__.py` 不能删。** 删了 `uv sync` 会报错，但本地 import 还能用，这个坑很隐蔽。
-- **练手代码不要放 `src/` 下面**，会被打进包。放项目根目录。
-- 数据已在 `data/MNIST/raw/`，**不要联网重新下载**。
+- 工作目录：`/home/niangaoa/PycharmProjects/ReAnchor`
+- **改任何文件都必须在 `dsh` 分支上改，禁止在 `main` 上改文件。**
+- **代码在 `dsh/mainline` 分支上，`main` 分支没有代码。** 写代码前先确认当前分支，切过去再动手。
+- 需要读文件时正常读，**只是不往主工作区写**。
 
 ---
 
@@ -94,16 +93,3 @@ PyCharm 的 Git 面板（`Ctrl+Shift+K` 或右下角分支名）也能看 diff �
 - 改动不明确时**最多先问一个问题**，问完就动手。
 - 不要为了确认显而易见的事反复读文件。
 - 不要用 `present` 展示源码文件，只在交付文档/图片/表格时用。
-
----
-
-## 五、跑代码
-
-```bash
-cd /home/niangaoa/PycharmProjects/ReAnchor
-uv sync                                        # 装依赖
-.venv/bin/python src/reanchor/feasibility.py   # 可行性检查
-.venv/bin/python src/reanchor/viz.py           # 画图
-```
-
-`viz.py` 里的 `plt.show()` 会阻塞，这是正常的，不是死机。
